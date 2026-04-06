@@ -13,6 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/north-echo/fluxgate-operator/internal/connector"
+	fluxgatemetrics "github.com/north-echo/fluxgate-operator/internal/metrics"
 )
 
 // SourceRegistry is an in-memory store of discovered pipeline sources, keyed by name.
@@ -73,6 +74,9 @@ func (r *DiscoveryController) Reconcile(ctx context.Context, req ctrl.Request) (
 			r.Log.Error(err, "connector discovery failed", "connector", conn.Name(), "namespace", req.Namespace)
 			continue
 		}
+
+		// Update pipelines discovered metric
+		fluxgatemetrics.PipelinesDiscovered.WithLabelValues(conn.Name()).Set(float64(len(sources)))
 
 		for _, src := range sources {
 			existing, found := r.Registry.Get(src.Name)

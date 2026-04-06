@@ -15,6 +15,7 @@ import (
 	"github.com/north-echo/fluxgate-operator/internal/analyzer"
 	"github.com/north-echo/fluxgate-operator/internal/connector"
 	"github.com/north-echo/fluxgate-operator/internal/controller"
+	_ "github.com/north-echo/fluxgate-operator/internal/metrics" // Register Prometheus metrics
 )
 
 var scheme = runtime.NewScheme()
@@ -90,9 +91,11 @@ func main() {
 	}
 
 	if err := (&controller.PolicyController{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Policy"),
-		Scheme: mgr.GetScheme(),
+		Client:     mgr.GetClient(),
+		Log:        ctrl.Log.WithName("controllers").WithName("Policy"),
+		Scheme:     mgr.GetScheme(),
+		Connectors: connectors,
+		Registry:   registry,
 	}).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create controller", "controller", "Policy")
 		os.Exit(1)

@@ -7,7 +7,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
+
+	fluxgatemetrics "github.com/north-echo/fluxgate-operator/internal/metrics"
 )
 
 // WorkflowFile represents a fetched workflow file from a repository.
@@ -91,9 +94,14 @@ func (g *GitHubClient) fetchContents(ctx context.Context, httpClient *http.Clien
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
+		fluxgatemetrics.GitHubAPIRequests.WithLabelValues("contents", "error").Inc()
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	// Record API metrics
+	fluxgatemetrics.GitHubAPIRequests.WithLabelValues("contents", strconv.Itoa(resp.StatusCode)).Inc()
+	g.recordRateLimit(resp)
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, nil // no workflows directory
@@ -121,9 +129,14 @@ func (g *GitHubClient) fetchFileContent(ctx context.Context, httpClient *http.Cl
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
+		fluxgatemetrics.GitHubAPIRequests.WithLabelValues("contents/file", "error").Inc()
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	// Record API metrics
+	fluxgatemetrics.GitHubAPIRequests.WithLabelValues("contents/file", strconv.Itoa(resp.StatusCode)).Inc()
+	g.recordRateLimit(resp)
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("GitHub API returned %d", resp.StatusCode)
@@ -141,6 +154,15 @@ func (g *GitHubClient) fetchFileContent(ctx context.Context, httpClient *http.Cl
 	}
 
 	return []byte(entry.Content), nil
+}
+
+// recordRateLimit extracts the GitHub rate limit remaining header and updates the metric.
+func (g *GitHubClient) recordRateLimit(resp *http.Response) {
+	if remaining := resp.Header.Get("X-RateLimit-Remaining"); remaining != "" {
+		if val, err := strconv.ParseFloat(remaining, 64); err == nil {
+			fluxgatemetrics.GitHubAPIRateRemaining.Set(val)
+		}
+	}
 }
 
 // setHeaders sets common headers for GitHub API requests.
