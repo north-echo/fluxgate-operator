@@ -1,0 +1,129 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: pipelinesecuritypolicies.fluxgate.north-echo.dev
+spec:
+  group: fluxgate.north-echo.dev
+  names:
+    kind: PipelineSecurityPolicy
+    listKind: PipelineSecurityPolicyList
+    plural: pipelinesecuritypolicies
+    singular: pipelinesecuritypolicy
+    shortNames:
+      - psp
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Phase
+          type: string
+          jsonPath: .status.phase
+      schema:
+        openAPIV3Schema:
+          type: object
+          description: PipelineSecurityPolicy defines thresholds and enforcement for pipeline security.
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+            metadata:
+              type: object
+            spec:
+              type: object
+              required:
+                - selector
+                - thresholds
+                - evaluationInterval
+              properties:
+                selector:
+                  type: object
+                  properties:
+                    cicdKinds:
+                      type: array
+                      items:
+                        type: string
+                    matchLabels:
+                      type: object
+                      additionalProperties:
+                        type: string
+                thresholds:
+                  type: object
+                  properties:
+                    maxCritical:
+                      type: integer
+                    maxHigh:
+                      type: integer
+                    requirePinnedActions:
+                      type: boolean
+                    requireSignedCommits:
+                      type: boolean
+                    requireBranchProtection:
+                      type: boolean
+                evaluationInterval:
+                  type: string
+                enforcement:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - action
+                      - trigger
+                    properties:
+                      action:
+                        type: string
+                        enum:
+                          - annotate
+                          - alert
+                          - suspendSync
+                          - labelWorkloads
+                      trigger:
+                        type: string
+                        enum:
+                          - Warning
+                          - NonCompliant
+                          - Critical
+                      gracePeriod:
+                        type: string
+                      alertTarget:
+                        type: object
+                        properties:
+                          type:
+                            type: string
+                          channel:
+                            type: string
+                          url:
+                            type: string
+                ruleOverrides:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - rule
+                      - severity
+                      - reason
+                    properties:
+                      rule:
+                        type: string
+                      severity:
+                        type: string
+                      reason:
+                        type: string
+                      scope:
+                        type: object
+                        properties:
+                          repositories:
+                            type: array
+                            items:
+                              type: string
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                message:
+                  type: string

@@ -1,0 +1,31 @@
+apiVersion: fluxgate.north-echo.dev/v1alpha1
+kind: PipelineSecurityPolicy
+metadata:
+  name: default-policy
+  namespace: fluxgate-system
+spec:
+  selector:
+    cicdKinds:
+      - Application
+      - GitRepository
+      - Kustomization
+      - Pipeline
+    matchLabels: {}
+  thresholds:
+    maxCritical: 0
+    maxHigh: 2
+    requirePinnedActions: true
+    requireSignedCommits: false
+    requireBranchProtection: false
+  evaluationInterval: 1h
+  enforcement:
+    - action: annotate
+      trigger: Warning
+    - action: alert
+      trigger: NonCompliant
+      alertTarget:
+        type: slack
+        channel: "#security-alerts"
+    - action: suspendSync
+      trigger: Critical
+      gracePeriod: "24h"

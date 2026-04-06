@@ -1,0 +1,18 @@
+apiVersion: v2
+name: fluxgate-operator
+description: Kubernetes operator for continuous CI/CD pipeline security posture
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - security
+  - cicd
+  - kubernetes
+  - supply-chain
+home: https://github.com/north-echo/fluxgate-operator
+sources:
+  - https://github.com/north-echo/fluxgate-operator
+  - https://github.com/north-echo/fluxgate
+maintainers:
+  - name: Christopher Lusk
+    url: https://github.com/north-echo

@@ -1,0 +1,20 @@
+{{- if and .Values.metrics.enabled .Values.metrics.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "fluxgate-operator.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "fluxgate-operator.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "fluxgate-operator.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
+      scheme: https
+      tlsConfig:
+        insecureSkipVerify: true
+{{- end }}

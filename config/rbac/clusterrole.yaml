@@ -1,0 +1,51 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: fluxgate-operator
+rules:
+  # Read access: ArgoCD Applications
+  - apiGroups: ["argoproj.io"]
+    resources: ["applications"]
+    verbs: ["get", "list", "watch"]
+  # Patch access: ArgoCD Applications (suspend/resume)
+  - apiGroups: ["argoproj.io"]
+    resources: ["applications"]
+    verbs: ["patch", "update"]
+  # Read access: Flux GitRepositories and Kustomizations
+  - apiGroups: ["source.toolkit.fluxcd.io"]
+    resources: ["gitrepositories"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["kustomize.toolkit.fluxcd.io"]
+    resources: ["kustomizations"]
+    verbs: ["get", "list", "watch"]
+  # Patch access: Flux Kustomizations (suspend/resume)
+  - apiGroups: ["kustomize.toolkit.fluxcd.io"]
+    resources: ["kustomizations"]
+    verbs: ["patch", "update"]
+  # Read access: Tekton Pipelines, PipelineRuns, Tasks
+  - apiGroups: ["tekton.dev"]
+    resources: ["pipelines", "pipelineruns", "tasks"]
+    verbs: ["get", "list", "watch"]
+  # Patch access: Tekton Pipelines (advisory suspend annotation)
+  - apiGroups: ["tekton.dev"]
+    resources: ["pipelines"]
+    verbs: ["patch", "update"]
+  # Read access: Kubernetes workloads
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets"]
+    verbs: ["get", "list", "watch"]
+  # Patch access: Deployments (for labeling)
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["patch", "update"]
+  # Read access: Namespaces
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch"]
+  # Full access: Fluxgate CRDs
+  - apiGroups: ["fluxgate.north-echo.dev"]
+    resources: ["pipelinesecuritypolicies", "pipelinesecurityreports"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["fluxgate.north-echo.dev"]
+    resources: ["pipelinesecuritypolicies/status", "pipelinesecurityreports/status"]
+    verbs: ["get", "update", "patch"]

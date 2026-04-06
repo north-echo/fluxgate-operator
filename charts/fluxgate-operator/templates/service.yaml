@@ -1,0 +1,18 @@
+{{- if .Values.metrics.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "fluxgate-operator.fullname" . }}-metrics
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "fluxgate-operator.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: metrics
+      port: 8443
+      targetPort: metrics
+      protocol: TCP
+  selector:
+    {{- include "fluxgate-operator.selectorLabels" . | nindent 4 }}
+{{- end }}

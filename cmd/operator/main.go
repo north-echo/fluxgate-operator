@@ -48,6 +48,10 @@ func main() {
 			Client: mgr.GetClient(),
 			Log:    ctrl.Log.WithName("connectors").WithName("flux"),
 		},
+		&connector.TektonConnector{
+			Client: mgr.GetClient(),
+			Log:    ctrl.Log.WithName("connectors").WithName("tekton"),
+		},
 	}
 
 	// Initialize shared source registry
