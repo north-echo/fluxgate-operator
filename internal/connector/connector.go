@@ -1,6 +1,10 @@
 package connector
 
-import "context"
+import (
+	"context"
+
+	v1alpha1 "github.com/north-echo/fluxgate-operator/api/v1alpha1"
+)
 
 // PipelineSource represents a discovered CI/CD pipeline source.
 type PipelineSource struct {
@@ -30,6 +34,15 @@ type PipelineSource struct {
 
 	// SourceKind is the kind of the Kubernetes object (e.g. "Application", "GitRepository").
 	SourceKind string
+
+	// Owner is the parsed repository owner (e.g. "org" from "github.com/org/repo").
+	Owner string
+
+	// Repo is the parsed repository name (e.g. "repo" from "github.com/org/repo").
+	Repo string
+
+	// TargetNamespace is the Kubernetes namespace that workloads are deployed to.
+	TargetNamespace string
 }
 
 // PipelineConnector discovers CI/CD pipeline sources from a GitOps platform.
@@ -39,4 +52,13 @@ type PipelineConnector interface {
 
 	// Name returns the connector name (e.g. "argocd", "flux").
 	Name() string
+
+	// ResolveWorkloads returns the workloads deployed by the given pipeline source.
+	ResolveWorkloads(ctx context.Context, src PipelineSource) ([]v1alpha1.WorkloadRef, error)
+
+	// Suspend disables automatic sync/reconciliation for the given source.
+	Suspend(ctx context.Context, src PipelineSource) error
+
+	// Resume re-enables automatic sync/reconciliation for the given source.
+	Resume(ctx context.Context, src PipelineSource) error
 }

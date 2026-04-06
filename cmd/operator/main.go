@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -11,6 +12,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	fluxgatev1alpha1 "github.com/north-echo/fluxgate-operator/api/v1alpha1"
+	"github.com/north-echo/fluxgate-operator/internal/analyzer"
+	"github.com/north-echo/fluxgate-operator/internal/connector"
 	"github.com/north-echo/fluxgate-operator/internal/controller"
 )
 
@@ -34,20 +37,44 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Initialize connectors
+	connectors := []connector.PipelineConnector{
+		&connector.ArgoCDConnector{
+			Client: mgr.GetClient(),
+			Log:    ctrl.Log.WithName("connectors").WithName("argocd"),
+		},
+		&connector.FluxConnector{
+			Client: mgr.GetClient(),
+			Log:    ctrl.Log.WithName("connectors").WithName("flux"),
+		},
+	}
+
+	// Initialize shared source registry
+	registry := controller.NewSourceRegistry()
+
+	// Initialize analyzer
+	githubToken := os.Getenv("GITHUB_TOKEN")
+	az := analyzer.NewAnalyzer(githubToken, 10*time.Minute)
+
 	// Register controllers
 	if err := (&controller.DiscoveryController{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Discovery"),
-		Scheme: mgr.GetScheme(),
+		Client:     mgr.GetClient(),
+		Log:        ctrl.Log.WithName("controllers").WithName("Discovery"),
+		Scheme:     mgr.GetScheme(),
+		Connectors: connectors,
+		Registry:   registry,
 	}).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create controller", "controller", "Discovery")
 		os.Exit(1)
 	}
 
 	if err := (&controller.AnalysisController{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Analysis"),
-		Scheme: mgr.GetScheme(),
+		Client:     mgr.GetClient(),
+		Log:        ctrl.Log.WithName("controllers").WithName("Analysis"),
+		Scheme:     mgr.GetScheme(),
+		Analyzer:   az,
+		Registry:   registry,
+		Connectors: connectors,
 	}).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create controller", "controller", "Analysis")
 		os.Exit(1)
